@@ -15,6 +15,7 @@ module.exports = {
     ConvexPolyhedron :              require('./shapes/ConvexPolyhedron'),
     Cylinder :                      require('./shapes/Cylinder'),
     DistanceConstraint :            require('./constraints/DistanceConstraint'),
+    Ellipsoid :                     require('./shapes/Ellipsoid'),
     Equation :                      require('./equations/Equation'),
     EventTarget :                   require('./utils/EventTarget'),
     FrictionEquation :              require('./equations/FrictionEquation'),
