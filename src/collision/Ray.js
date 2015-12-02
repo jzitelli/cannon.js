@@ -746,6 +746,7 @@ Ray.prototype.intersectEllipsoid = function(shape, quat, position, body, reporte
     var from = this.from,
         to = this.to;
 
+    // something wrong..
     Ray_intersectEllipsoid_rotabc.set(shape.a, shape.b, shape.c);
     quat.vmult(Ray_intersectEllipsoid_rotabc, Ray_intersectEllipsoid_rotabc);
     var a = Ray_intersectEllipsoid_rotabc.x,

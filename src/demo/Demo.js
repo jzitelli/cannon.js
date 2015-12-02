@@ -1112,6 +1112,13 @@ CANNON.Demo.prototype.shape2mesh = function(body){
             mesh = new THREE.Mesh(geometry, this.currentMaterial);
             break;
 
+        case CANNON.Shape.types.ELLIPSOID:
+            var ellipsoid_geometry = new THREE.SphereGeometry( shape.a, 16, 12 );
+            var scaleMat = new THREE.Matrix4().makeScale(1, shape.b / shape.a, shape.c / shape.a);
+            ellipsoid_geometry.applyMatrix(scaleMat);
+            mesh = new THREE.Mesh( ellipsoid_geometry, this.currentMaterial );
+            break;
+
         default:
             throw "Visual type not recognized: "+shape.type;
         }

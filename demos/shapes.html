@@ -126,6 +126,14 @@
             polyhedronBody.position.set(size*2,-size*2,size+1);
             world.addBody(polyhedronBody);
             demo.addVisual(polyhedronBody);
+
+            // Ellipsoid
+            var ellipsoidBody = new CANNON.Body({mass: mass });
+            var ellipsoidShape = new CANNON.Ellipsoid(1, 2, 4);
+            ellipsoidBody.addShape(ellipsoidShape);
+            ellipsoidBody.position.set(2*size, 0, 10*size);
+            world.addBody(ellipsoidBody);
+            demo.addVisual(ellipsoidBody);
         });
 
       function setupWorld(demo){
