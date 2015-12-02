@@ -772,19 +772,26 @@ Ray.prototype.intersectEllipsoid = function(shape, quat, position, body, reporte
 
     if(delta < 0){
         // No intersection
+        console.log("no intersection point on ellipsoid!!!");
+
         return;
 
     } else if(delta === 0){
         // single intersection point
-        from.lerp(to, delta, intersectionPoint);
+        console.log("single intersection point on ellipsoid!!!");
 
+        from.lerp(to, -B / (2*A), intersectionPoint);
         intersectionPoint.vsub(position, normal);
+        normal.x /= a;
+        normal.y /= b;
+        normal.z /= c;
         normal.normalize();
 
         this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
 
     } else {
-        // ASSuming nothing changes here from sphere case...
+        console.log("double intersection point on ellipsoid!!!");
+
         var d1 = (- B - Math.sqrt(delta)) / (2 * A);
         var d2 = (- B + Math.sqrt(delta)) / (2 * A);
 
