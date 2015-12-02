@@ -1749,3 +1749,43 @@ Narrowphase.prototype.sphereHeightfield = function (
         }
     }
 };
+
+
+// TODO:
+
+/**
+ * @method sphereEllipsoid
+ * @param  {Shape}      si
+ * @param  {Shape}      sj
+ * @param  {Vec3}       xi
+ * @param  {Vec3}       xj
+ * @param  {Quaternion} qi
+ * @param  {Quaternion} qj
+ * @param  {Body}       bi
+ * @param  {Body}       bj
+ */
+Narrowphase.prototype[Shape.types.SPHERE | Shape.types.ELLIPSOID] =
+Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj){
+    // We will have only one contact in this case
+    var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
+
+    // // Contact normal
+    // xj.vsub(xi, r.ni);
+    // r.ni.normalize();
+
+    // // Contact point locations
+    // r.ri.copy(r.ni);
+    // r.rj.copy(r.ni);
+    // r.ri.mult(si.radius, r.ri);
+    // r.rj.mult(-sj.radius, r.rj);
+
+    // r.ri.vadd(xi, r.ri);
+    // r.ri.vsub(bi.position, r.ri);
+
+    // r.rj.vadd(xj, r.rj);
+    // r.rj.vsub(bj.position, r.rj);
+
+    // this.result.push(r);
+
+    // this.createFrictionEquationsFromContact(r, this.frictionResult);
+};
