@@ -730,6 +730,71 @@ Ray.prototype.intersectTrimesh = function intersectTrimesh(
 Ray.prototype[Shape.types.TRIMESH] = Ray.prototype.intersectTrimesh;
 
 
+var Ray_intersectEllipsoid_intersectionPoint = new Vec3();
+var Ray_intersectEllipsoid_normal = new Vec3();
+
+/**
+ * @method intersectEllipsoid
+ * @private
+ * @param  {Shape} shape
+ * @param  {Quaternion} quat
+ * @param  {Vec3} position
+ * @param  {Body} body
+ */
+Ray.prototype.intersectEllipsoid = function(shape, quat, position, body, reportedShape){
+    var from = this.from,
+        to = this.to,
+        a = shape.a,
+        b = shape.b,
+        c = shape.c;
+
+    var intersectionPoint = Ray_intersectEllipsoid_intersectionPoint;
+    var normal = Ray_intersectEllipsoid_normal;
+
+    // var a = Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2) + Math.pow(to.z - from.z, 2);
+    // var b = 2 * ((to.x - from.x) * (from.x - position.x) + (to.y - from.y) * (from.y - position.y) + (to.z - from.z) * (from.z - position.z));
+    // var c = Math.pow(from.x - position.x, 2) + Math.pow(from.y - position.y, 2) + Math.pow(from.z - position.z, 2) - Math.pow(r, 2);
+
+    // var delta = Math.pow(b, 2) - 4 * a * c;
+
+    // if(delta < 0){
+    //     // No intersection
+    //     return;
+
+    // } else if(delta === 0){
+    //     // single intersection point
+    //     from.lerp(to, delta, intersectionPoint);
+
+    //     intersectionPoint.vsub(position, normal);
+    //     normal.normalize();
+
+    //     this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
+
+    // } else {
+    //     var d1 = (- b - Math.sqrt(delta)) / (2 * a);
+    //     var d2 = (- b + Math.sqrt(delta)) / (2 * a);
+
+    //     if(d1 >= 0 && d1 <= 1){
+    //         from.lerp(to, d1, intersectionPoint);
+    //         intersectionPoint.vsub(position, normal);
+    //         normal.normalize();
+    //         this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
+    //     }
+
+    //     if(this.result._shouldStop){
+    //         return;
+    //     }
+
+    //     if(d2 >= 0 && d2 <= 1){
+    //         from.lerp(to, d2, intersectionPoint);
+    //         intersectionPoint.vsub(position, normal);
+    //         normal.normalize();
+    //         this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
+    //     }
+    // }
+};
+Ray.prototype[Shape.types.ELLIPSOID] = Ray.prototype.intersectEllipsoid;
+
 /**
  * @method reportIntersection
  * @private

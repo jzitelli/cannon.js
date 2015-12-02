@@ -92,6 +92,6 @@ Shape.types = {
     HEIGHTFIELD:32,
     PARTICLE:64,
     CYLINDER:128,
-    TRIMESH:256
+    TRIMESH:256,
+    ELLIPSOID:257
 };
-
