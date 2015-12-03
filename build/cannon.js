@@ -1,4 +1,4 @@
-// Wed, 02 Dec 2015 23:02:32 GMT
+// Thu, 03 Dec 2015 00:40:52 GMT
 
 /*
  * Copyright (c) 2015 cannon.js Authors
@@ -13386,6 +13386,49 @@ Narrowphase.prototype.sphereHeightfield = function (
             */
         }
     }
+};
+
+
+var ellipsoidLengths = new Vec3();
+
+/**
+ * @method sphereEllipsoid
+ * @param  {Shape}      si
+ * @param  {Shape}      sj
+ * @param  {Vec3}       xi
+ * @param  {Vec3}       xj
+ * @param  {Quaternion} qi
+ * @param  {Quaternion} qj
+ * @param  {Body}       bi
+ * @param  {Body}       bj
+ */
+Narrowphase.prototype[Shape.types.SPHERE | Shape.types.ELLIPSOID] =
+Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj){
+    // We will have only one contact in this case
+    var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
+
+    // Contact normal
+    xj.vsub(xi, r.ni);
+    r.ni.normalize();
+
+    // Contact point locations
+
+    // on the sphere:
+    r.ri.copy(r.ni);
+    r.ri.scale(si.radius, r.ri);
+    r.ri.vadd(xi, r.ri);
+    r.ri.vsub(bi.position, r.ri);
+
+    // on the ellipsoid:
+    r.rj.copy(r.ni);
+    ellipsoidLengths.set(-sj.a, -sj.b, -sj.c);
+    r.rj.vmul(ellipsoidLengths, r.rj);
+    r.rj.vadd(xj, r.rj);
+    r.rj.vsub(bj.position, r.rj);
+
+    this.result.push(r);
+
+    this.createFrictionEquationsFromContact(r, this.frictionResult);
 };
 
 },{"../collision/AABB":3,"../collision/Ray":9,"../equations/ContactEquation":19,"../equations/FrictionEquation":21,"../math/Quaternion":28,"../math/Transform":29,"../math/Vec3":30,"../shapes/ConvexPolyhedron":38,"../shapes/Shape":44,"../solver/Solver":48,"../utils/Vec3Pool":55}],57:[function(_dereq_,module,exports){
