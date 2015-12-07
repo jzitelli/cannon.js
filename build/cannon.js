@@ -1,4 +1,4 @@
-// Thu, 03 Dec 2015 00:40:52 GMT
+// Mon, 07 Dec 2015 20:17:28 GMT
 
 /*
  * Copyright (c) 2015 cannon.js Authors
@@ -13429,6 +13429,58 @@ Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj
     this.result.push(r);
 
     this.createFrictionEquationsFromContact(r, this.frictionResult);
+};
+
+
+var point_on_plane_to_ellipsoid = new Vec3();
+var plane_to_ellipsoid_ortho = new Vec3();
+
+/**
+ * @method planeEllipsoid
+ * @param  {Shape}      si
+ * @param  {Shape}      sj
+ * @param  {Vec3}       xi
+ * @param  {Vec3}       xj
+ * @param  {Quaternion} qi
+ * @param  {Quaternion} qj
+ * @param  {Body}       bi
+ * @param  {Body}       bj
+ */
+Narrowphase.prototype[Shape.types.PLANE | Shape.types.ELLIPSOID] =
+Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj){
+    // *** WIP ***
+
+    // We will have one contact in this case
+    var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
+
+    // Contact normal
+    r.nj.set(0,0,1);
+    qi.vmult(r.nj, r.nj);
+    r.nj.negate(r.nj); // body j is the ellipsoid, flip normal
+    r.nj.normalize(); // Needed?
+
+    // Vector from ellipsoid center to contact point
+    ellipsoidLengths.set(sj.a, sj.b, sj.c);
+    r.nj.vmul(ellipsoidLengths, r.rj);
+
+    // Project down ellipsoid on plane
+    xj.vsub(xi, point_on_plane_to_ellipsoid);
+    r.nj.mult(r.nj.dot(point_on_plane_to_ellipsoid), plane_to_ellipsoid_ortho);
+    point_on_plane_to_ellipsoid.vsub(plane_to_ellipsoid_ortho,r.ri); // The ellipsoid position projected to plane
+
+    // if(-point_on_plane_to_ellipsoid.dot(r.nj) <= sj.radius){
+
+    //     // Make it relative to the body
+    //     var ri = r.ri;
+    //     var rj = r.rj;
+    //     ri.vadd(xi, ri);
+    //     ri.vsub(bi.position, ri);
+    //     rj.vadd(xj, rj);
+    //     rj.vsub(bj.position, rj);
+
+    //     this.result.push(r);
+    //     this.createFrictionEquationsFromContact(r, this.frictionResult);
+    // }
 };
 
 },{"../collision/AABB":3,"../collision/Ray":9,"../equations/ContactEquation":19,"../equations/FrictionEquation":21,"../math/Quaternion":28,"../math/Transform":29,"../math/Vec3":30,"../shapes/ConvexPolyhedron":38,"../shapes/Shape":44,"../solver/Solver":48,"../utils/Vec3Pool":55}],57:[function(_dereq_,module,exports){
