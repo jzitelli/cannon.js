@@ -1782,8 +1782,10 @@ Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj
     r.ri.vsub(bi.position, r.ri);
 
     // on the ellipsoid:
+    // TODO:
     r.rj.copy(r.ni);
     ellipsoidLengths.set(-sj.a, -sj.b, -sj.c);
+    qj.vmult(ellipsoidLengths, ellipsoidLengths);
     r.rj.vmul(ellipsoidLengths, r.rj);
     r.rj.vadd(xj, r.rj);
     r.rj.vsub(bj.position, r.rj);
