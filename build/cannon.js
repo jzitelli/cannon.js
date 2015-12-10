@@ -1,4 +1,4 @@
-// Mon, 07 Dec 2015 20:18:23 GMT
+// Thu, 10 Dec 2015 08:13:04 GMT
 
 /*
  * Copyright (c) 2015 cannon.js Authors
@@ -13420,8 +13420,10 @@ Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj
     r.ri.vsub(bi.position, r.ri);
 
     // on the ellipsoid:
+    // TODO:
     r.rj.copy(r.ni);
     ellipsoidLengths.set(-sj.a, -sj.b, -sj.c);
+    qj.vmult(ellipsoidLengths, ellipsoidLengths);
     r.rj.vmul(ellipsoidLengths, r.rj);
     r.rj.vadd(xj, r.rj);
     r.rj.vsub(bj.position, r.rj);
