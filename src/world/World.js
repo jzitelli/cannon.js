@@ -11,6 +11,7 @@ var FrictionEquation = require('../equations/FrictionEquation');
 var Narrowphase = require('./Narrowphase');
 var EventTarget = require('../utils/EventTarget');
 var ArrayCollisionMatrix = require('../collision/ArrayCollisionMatrix');
+var OverlapKeeper = require('../collision/OverlapKeeper');
 var Material = require('../material/Material');
 var ContactMaterial = require('../material/ContactMaterial');
 var Body = require('../objects/Body');
@@ -149,6 +150,9 @@ function World(options){
 	 */
 	this.collisionMatrixPrevious = new ArrayCollisionMatrix();
 
+    this.bodyOverlapKeeper = new OverlapKeeper();
+    this.shapeOverlapKeeper = new OverlapKeeper();
+
     /**
      * All added materials
      * @property materials
@@ -214,7 +218,7 @@ function World(options){
      */
     this.addBodyEvent = {
         type:"addBody",
-        body : null,
+        body : null
     };
 
     /**
@@ -224,8 +228,10 @@ function World(options){
      */
     this.removeBodyEvent = {
         type:"removeBody",
-        body : null,
+        body : null
     };
+
+    this.idToBodyMap = {};
 
     this.broadphase.setWorld(this);
 }
@@ -266,6 +272,9 @@ World.prototype.collisionMatrixTick = function(){
 	this.collisionMatrixPrevious = this.collisionMatrix;
 	this.collisionMatrix = temp;
 	this.collisionMatrix.reset();
+
+    this.bodyOverlapKeeper.tick();
+    this.shapeOverlapKeeper.tick();
 };
 
 /**
@@ -292,6 +301,7 @@ World.prototype.add = World.prototype.addBody = function(body){
     }
 	this.collisionMatrix.setNumObjects(this.bodies.length);
     this.addBodyEvent.body = body;
+    this.idToBodyMap[body.id] = body;
     this.dispatchEvent(this.addBodyEvent);
 };
 
@@ -422,6 +432,7 @@ World.prototype.remove = function(body){
 
         this.collisionMatrix.setNumObjects(n);
         this.removeBodyEvent.body = body;
+        delete this.idToBodyMap[body.id];
         this.dispatchEvent(this.removeBodyEvent);
     }
 };
@@ -432,6 +443,24 @@ World.prototype.remove = function(body){
  * @param {Body} body
  */
 World.prototype.removeBody = World.prototype.remove;
+
+World.prototype.getBodyById = function(id){
+    return this.idToBodyMap[id];
+};
+
+// TODO Make a faster map
+World.prototype.getShapeById = function(id){
+    var bodies = this.bodies;
+    for(var i=0, bl = bodies.length; i<bl; i++){
+        var shapes = bodies[i].shapes;
+        for (var j = 0, sl = shapes.length; j < sl; j++) {
+            var shape = shapes[j];
+            if(shape.id === id){
+                return shape;
+            }
+        }
+    }
+};
 
 /**
  * Adds a material to the World.
@@ -782,7 +811,13 @@ World.prototype.internalStep = function(dt){
             World_step_collideEvent.body = bi;
             bj.dispatchEvent(World_step_collideEvent);
         }
+
+        this.bodyOverlapKeeper.set(bi.id, bj.id);
+        this.shapeOverlapKeeper.set(si.id, sj.id);
     }
+
+    this.emitContactEvents();
+
     if(doProfiling){
         profile.makeContactConstraints = performance.now() - profilingStart;
         profilingStart = performance.now();
@@ -887,6 +922,97 @@ World.prototype.internalStep = function(dt){
         }
     }
 };
+
+World.prototype.emitContactEvents = (function(){
+    var additions = [];
+    var removals = [];
+    var beginContactEvent = {
+        type: 'beginContact',
+        bodyA: null,
+        bodyB: null
+    };
+    var endContactEvent = {
+        type: 'endContact',
+        bodyA: null,
+        bodyB: null
+    };
+    var beginShapeContactEvent = {
+        type: 'beginShapeContact',
+        bodyA: null,
+        bodyB: null,
+        shapeA: null,
+        shapeB: null
+    };
+    var endShapeContactEvent = {
+        type: 'endShapeContact',
+        bodyA: null,
+        bodyB: null,
+        shapeA: null,
+        shapeB: null
+    };
+    return function(){
+        var hasBeginContact = this.hasAnyEventListener('beginContact');
+        var hasEndContact = this.hasAnyEventListener('endContact');
+
+        if(hasBeginContact || hasEndContact){
+            this.bodyOverlapKeeper.getDiff(additions, removals);
+        }
+
+        if(hasBeginContact){
+            for (var i = 0, l = additions.length; i < l; i += 2) {
+                beginContactEvent.bodyA = this.getBodyById(additions[i]);
+                beginContactEvent.bodyB = this.getBodyById(additions[i+1]);
+                this.dispatchEvent(beginContactEvent);
+            }
+            beginContactEvent.bodyA = beginContactEvent.bodyB = null;
+        }
+
+        if(hasEndContact){
+            for (var i = 0, l = removals.length; i < l; i += 2) {
+                endContactEvent.bodyA = this.getBodyById(removals[i]);
+                endContactEvent.bodyB = this.getBodyById(removals[i+1]);
+                this.dispatchEvent(endContactEvent);
+            }
+            endContactEvent.bodyA = endContactEvent.bodyB = null;
+        }
+
+        additions.length = removals.length = 0;
+
+        var hasBeginShapeContact = this.hasAnyEventListener('beginShapeContact');
+        var hasEndShapeContact = this.hasAnyEventListener('endShapeContact');
+
+        if(hasBeginShapeContact || hasEndShapeContact){
+            this.shapeOverlapKeeper.getDiff(additions, removals);
+        }
+
+        if(hasBeginShapeContact){
+            for (var i = 0, l = additions.length; i < l; i += 2) {
+                var shapeA = this.getShapeById(additions[i]);
+                var shapeB = this.getShapeById(additions[i+1]);
+                beginShapeContactEvent.shapeA = shapeA;
+                beginShapeContactEvent.shapeB = shapeB;
+                beginShapeContactEvent.bodyA = shapeA.body;
+                beginShapeContactEvent.bodyB = shapeB.body;
+                this.dispatchEvent(beginShapeContactEvent);
+            }
+            beginShapeContactEvent.bodyA = beginShapeContactEvent.bodyB = beginShapeContactEvent.shapeA = beginShapeContactEvent.shapeB = null;
+        }
+
+        if(hasEndShapeContact){
+            for (var i = 0, l = removals.length; i < l; i += 2) {
+                var shapeA = this.getShapeById(removals[i]);
+                var shapeB = this.getShapeById(removals[i+1]);
+                endShapeContactEvent.shapeA = shapeA;
+                endShapeContactEvent.shapeB = shapeB;
+                endShapeContactEvent.bodyA = shapeA.body;
+                endShapeContactEvent.bodyB = shapeB.body;
+                this.dispatchEvent(endShapeContactEvent);
+            }
+            endShapeContactEvent.bodyA = endShapeContactEvent.bodyB = endShapeContactEvent.shapeA = endShapeContactEvent.shapeB = null;
+        }
+
+    };
+})();
 
 /**
  * Sets all body forces in the world to zero.

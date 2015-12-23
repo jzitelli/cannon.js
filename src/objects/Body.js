@@ -440,6 +440,7 @@ Body.wakeupEvent = {
 Body.prototype.wakeUp = function(){
     var s = this.sleepState;
     this.sleepState = 0;
+    this._wakeUpAfterNarrowphase = false;
     if(s === Body.SLEEPING){
         this.dispatchEvent(Body.wakeupEvent);
     }
@@ -453,6 +454,7 @@ Body.prototype.sleep = function(){
     this.sleepState = Body.SLEEPING;
     this.velocity.set(0,0,0);
     this.angularVelocity.set(0,0,0);
+    this._wakeUpAfterNarrowphase = false;
 };
 
 /**
@@ -593,6 +595,8 @@ Body.prototype.addShape = function(shape, _offset, _orientation){
     this.updateBoundingRadius();
 
     this.aabbNeedsUpdate = true;
+
+    shape.body = this;
 
     return this;
 };
@@ -874,14 +878,19 @@ Body.prototype.integrate = function(dt, quatNormalize, quatNormalizeFast){
         invInertia = this.invInertiaWorld,
         linearFactor = this.linearFactor;
 
-    velo.x += force.x * invMass * dt * linearFactor.x;
-    velo.y += force.y * invMass * dt * linearFactor.y;
-    velo.z += force.z * invMass * dt * linearFactor.z;
+    var iMdt = invMass * dt;
+    velo.x += force.x * iMdt * linearFactor.x;
+    velo.y += force.y * iMdt * linearFactor.y;
+    velo.z += force.z * iMdt * linearFactor.z;
 
     var e = invInertia.elements;
-    angularVelo.x += dt * (e[0] * torque.x + e[1] * torque.y + e[2] * torque.z);
-    angularVelo.y += dt * (e[3] * torque.x + e[4] * torque.y + e[5] * torque.z);
-    angularVelo.z += dt * (e[6] * torque.x + e[7] * torque.y + e[8] * torque.z);
+    var angularFactor = this.angularFactor;
+    var tx = torque.x * angularFactor.x;
+    var ty = torque.y * angularFactor.y;
+    var tz = torque.z * angularFactor.z;
+    angularVelo.x += dt * (e[0] * tx + e[1] * ty + e[2] * tz);
+    angularVelo.y += dt * (e[3] * tx + e[4] * ty + e[5] * tz);
+    angularVelo.z += dt * (e[6] * tx + e[7] * ty + e[8] * tz);
 
     // Use new velocity  - leap frog
     pos.x += velo.x * dt;
