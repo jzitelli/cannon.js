@@ -1955,3 +1955,25 @@ Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj)
     //     this.createFrictionEquationsFromContact(r, this.frictionResult);
     // }
 };
+
+
+
+/**
+ * @method sphereImplicitCylinder
+ */
+Narrowphase.prototype[Shape.types.SPHERE | Shape.types.IMPLICITCYLINDER] =
+Narrowphase.prototype.sphereImplicitCylinder = function (
+    sphereShape,
+    cylShape,
+    spherePos,
+    cylPos,
+    sphereQuat,
+    cylQuat,
+    sphereBody,
+    cylBody,
+    rsi,
+    rsj,
+    justTest
+) {
+    //  WIP
+};
