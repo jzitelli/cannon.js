@@ -768,45 +768,54 @@ Ray.prototype.intersectEllipsoid = function(shape, quat, position, body, reporte
     var intersectionPoint = Ray_intersectEllipsoid_intersectionPoint;
     var normal = Ray_intersectEllipsoid_normal;
 
-    if(delta < 0){
+    if (delta < 0) {
         // No intersection
-        console.log("no intersection point on ellipsoid!!!");
-
-        return;
-
-    } else if(delta === 0){
-        // single intersection point
-        console.log("single intersection point on ellipsoid!!!");
-
+        // console.log("no intersection point on ellipsoid!!!");
+    } else if (delta === 0) {
         from.lerp(to, -B / (2*A), intersectionPoint);
         intersectionPoint.vsub(position, normal);
         normal.x /= a;
         normal.y /= b;
         normal.z /= c;
         normal.normalize();
-
         this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
-
     } else {
-        console.log("double intersection point on ellipsoid!!!");
-
         var d1 = (- B - Math.sqrt(delta)) / (2 * A);
         var d2 = (- B + Math.sqrt(delta)) / (2 * A);
-
-        if(d1 >= 0 && d1 <= 1){
-            from.lerp(to, d1, intersectionPoint);
+        var isValid1 = (d1 >= 0 && d1 <= 1);
+        var isValid2 = (d2 >= 0 && d2 <= 1);
+        if (isValid1 && isValid2) {
+            from.lerp(to, Math.min(d1, d2), intersectionPoint);
             intersectionPoint.vsub(position, normal);
+            normal.x /= a;
+            normal.y /= b;
+            normal.z /= c;
             normal.normalize();
             this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
-        }
-
-        if(this.result._shouldStop){
-            return;
-        }
-
-        if(d2 >= 0 && d2 <= 1){
+            if(this.result._shouldStop){
+                return;
+            }
+            from.lerp(to, Math.max(d1, d2), intersectionPoint);
+            intersectionPoint.vsub(position, normal);
+            normal.x /= a;
+            normal.y /= b;
+            normal.z /= c;
+            normal.normalize();
+            this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
+        } else if (isValid1) {
+            from.lerp(to, d1, intersectionPoint);
+            intersectionPoint.vsub(position, normal);
+            normal.x /= a;
+            normal.y /= b;
+            normal.z /= c;
+            normal.normalize();
+            this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
+        } else if (isValid2) {
             from.lerp(to, d2, intersectionPoint);
             intersectionPoint.vsub(position, normal);
+            normal.x /= a;
+            normal.y /= b;
+            normal.z /= c;
             normal.normalize();
             this.reportIntersection(normal, intersectionPoint, reportedShape, body, -1);
         }
@@ -827,8 +836,8 @@ Ray.prototype[Shape.types.ELLIPSOID] = Ray.prototype.intersectEllipsoid;
 Ray.prototype.intersectImplicitCylinder = function(shape, quat, position, body, reportedShape) {
     var from = this.from,
         to = this.to,
-        R_top = shape.radiusTop,
-        R_bottom = shape.radiusBottom;
+        R = shape.radius,
+        H = shape.height;
     // WIP
 };
 Ray.prototype[Shape.types.IMPLICITCYLINDER] = Ray.prototype.intersectImplicitCylinder;
