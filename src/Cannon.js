@@ -23,6 +23,7 @@ module.exports = {
     GridBroadphase :                require('./collision/GridBroadphase'),
     Heightfield :                   require('./shapes/Heightfield'),
     HingeConstraint :               require('./constraints/HingeConstraint'),
+    ImplicitCylinder :              require('./shapes/ImplicitCylinder'),
     LockConstraint :                require('./constraints/LockConstraint'),
     Mat3 :                          require('./math/Mat3'),
     Material :                      require('./material/Material'),

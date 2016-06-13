@@ -3,8 +3,6 @@ module.exports = Ray;
 var Vec3 = require('../math/Vec3');
 var Quaternion = require('../math/Quaternion');
 var Transform = require('../math/Transform');
-var ConvexPolyhedron = require('../shapes/ConvexPolyhedron');
-var Box = require('../shapes/Box');
 var RaycastResult = require('../collision/RaycastResult');
 var Shape = require('../shapes/Shape');
 var AABB = require('../collision/AABB');
@@ -815,6 +813,27 @@ Ray.prototype.intersectEllipsoid = function(shape, quat, position, body, reporte
     }
 };
 Ray.prototype[Shape.types.ELLIPSOID] = Ray.prototype.intersectEllipsoid;
+
+
+
+/**
+ * @method intersectImplicitCylinder
+ * @private
+ * @param  {Shape} shape
+ * @param  {Quaternion} quat
+ * @param  {Vec3} position
+ * @param  {Body} body
+ */
+Ray.prototype.intersectImplicitCylinder = function(shape, quat, position, body, reportedShape) {
+    var from = this.from,
+        to = this.to,
+        R_top = shape.radiusTop,
+        R_bottom = shape.radiusBottom;
+    // WIP
+};
+Ray.prototype[Shape.types.IMPLICITCYLINDER] = Ray.prototype.intersectImplicitCylinder;
+
+
 
 /**
  * @method reportIntersection
