@@ -1927,19 +1927,19 @@ Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj)
     var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
 
     // Contact normal
-    r.nj.set(0,0,1);
-    qi.vmult(r.nj, r.nj);
-    r.nj.negate(r.nj); // body j is the ellipsoid, flip normal
-    r.nj.normalize(); // Needed?
+    r.ni.set(0,0,1);
+    qi.vmult(r.ni, r.ni);
+    //r.nj.normalize(); // Needed?
 
     // Vector from ellipsoid center to contact point
-    ellipsoidLengths.set(sj.a, sj.b, sj.c);
-    r.nj.vmul(ellipsoidLengths, r.rj);
+    ellipsoidLengths.set(-sj.a, -sj.b, -sj.c);
+    qj.vmult(ellipsoidLengths, ellipsoidLengths);
+    r.ni.vmul(ellipsoidLengths, r.rj);
 
     // Project down ellipsoid on plane
     xj.vsub(xi, point_on_plane_to_ellipsoid);
-    r.nj.mult(r.nj.dot(point_on_plane_to_ellipsoid), plane_to_ellipsoid_ortho);
-    point_on_plane_to_ellipsoid.vsub(plane_to_ellipsoid_ortho,r.ri); // The ellipsoid position projected to plane
+    r.ni.mult(r.ni.dot(point_on_plane_to_ellipsoid), plane_to_ellipsoid_ortho);
+    point_on_plane_to_ellipsoid.vsub(plane_to_ellipsoid_ortho, r.ri); // The ellipsoid position projected to plane
 
     // if(-point_on_plane_to_ellipsoid.dot(r.nj) <= sj.radius){
 
