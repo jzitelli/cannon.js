@@ -1962,18 +1962,16 @@ Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj)
  * @method sphereImplicitCylinder
  */
 Narrowphase.prototype[Shape.types.SPHERE | Shape.types.IMPLICITCYLINDER] =
-Narrowphase.prototype.sphereImplicitCylinder = function (
-    sphereShape,
-    cylShape,
-    spherePos,
-    cylPos,
-    sphereQuat,
-    cylQuat,
-    sphereBody,
-    cylBody,
-    rsi,
-    rsj,
-    justTest
-) {
-    //  WIP
+Narrowphase.prototype.sphereImplicitCylinder = function (sphereShape, cylShape, spherePos, cylPos, sphereQuat, cylQuat, sphereBody, cylBody, rsi, rsj, justTest) {
+    var bi = sphereBody;
+    var bj = cylBody;
+    var si = sphereShape;
+    var sj = cylShape;
+    var xi = spherePos;
+    var xj = cylPos;
+    var qi = sphereQuat;
+    var qj = cylQuat;
+
+    // WIP
+    // var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
 };

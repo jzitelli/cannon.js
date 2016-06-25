@@ -1119,6 +1119,11 @@ CANNON.Demo.prototype.shape2mesh = function(body){
             mesh = new THREE.Mesh( ellipsoid_geometry, this.currentMaterial );
             break;
 
+        case CANNON.Shape.types.IMPLICITCYLINDER:
+            var impCylGeometry = new THREE.CylinderGeometry(shape.radius, shape.radius, shape.height, 16, 1);
+            mesh = new THREE.Mesh(impCylGeometry, this.currentMaterial);
+            break;
+
         default:
             throw "Visual type not recognized: "+shape.type;
         }
