@@ -73,13 +73,20 @@ Ellipsoid.prototype.calculateWorldAABB = function(pos,quat,min,max) {
      * where U is the 3x3 orthogonal rotation matrix (computed from the quaternion),
      * \Sigma is the diagonal matrix of eigenvalues (1/a^2, 1/b^2, 1/c^2).
      *
-     * The two points attaining min/max in the first component occur where
+     * The two points attaining min/max along the (e.g.) x-axis occur where
      *
      *   \grad{f}(\vec{x})_2 = 0, \grad{f}(\vec{x})_3 = 0.
      *
      * Expression for the gradient:
      *
      *   \grad{f}(\vec{x}) = 2 U \Sigma U^T \vec{x}.
+     *
+     * Solving for a given RHS \vec{b}:
+     *
+     *   \grad{f}(\vec{x}) = \vec{b}
+     *      ===>  \vec{x}  = (1/2) U \Sigma^{-1} U^T \vec{b}.
+     *
+     * For \vec{b} := [b_1, 0, 0]^T,
      *
      */
 
