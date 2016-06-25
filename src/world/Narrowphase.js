@@ -1957,21 +1957,79 @@ Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj)
 };
 
 
+var temp = new Vec3();
+var normal = new Vec3();
+var point = new Vec3();
 
 /**
  * @method sphereImplicitCylinder
  */
 Narrowphase.prototype[Shape.types.SPHERE | Shape.types.IMPLICITCYLINDER] =
-Narrowphase.prototype.sphereImplicitCylinder = function (sphereShape, cylShape, spherePos, cylPos, sphereQuat, cylQuat, sphereBody, cylBody, rsi, rsj, justTest) {
-    var bi = sphereBody;
-    var bj = cylBody;
-    var si = sphereShape;
-    var sj = cylShape;
-    var xi = spherePos;
-    var xj = cylPos;
-    var qi = sphereQuat;
-    var qj = cylQuat;
-
-    // WIP
-    // var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
+Narrowphase.prototype.sphereImplicitCylinder = function (si, sj, xi, xj, qi, qj, bi, bj, rsi, rsj, justTest) {
+    var H = sj.height;
+    var R = sj.radius;
+    var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
+    var ri = r.ri;
+    var rj = r.rj;
+    for (var i = 0; i < 2; i++) {
+        if (i === 0) {
+            // bottom end
+            r.ni.set(0, 1, 0);
+            temp.set(0, -0.5*H, 0);
+        } else {
+            // top end
+            r.ni.set(0, -1, 0);
+            temp.set(0, 0.5*H, 0);
+        }
+        qj.vmult(r.ni, r.ni);
+        r.ni.normalize();
+        qj.vmult(temp, temp);
+        temp.vadd(xj, temp);
+        // Project down sphere on plane
+        xi.vsub(temp, point_on_plane_to_sphere);
+        r.ni.mult(r.ni.dot(point_on_plane_to_sphere), plane_to_sphere_ortho);
+        point_on_plane_to_sphere.vsub(plane_to_sphere_ortho, rj); // The sphere position projected to plane
+        rj.vadd(xj, rj);
+        if(-point_on_plane_to_sphere.dot(r.ni) <= si.radius && rj.distanceSquared(temp) < R*R) {
+            if (justTest) {
+                return true;
+            }
+            // Vector from sphere center to contact point
+            r.ni.mult(si.radius, ri);
+            // Make it relative to the body
+            ri.vadd(xi, ri);
+            ri.vsub(bi.position, ri);
+            rj.vsub(bj.position, rj);
+            this.result.push(r);
+            this.createFrictionEquationsFromContact(r, this.frictionResult);
+            return;
+        }
+    }
+    // still checking, with no contacts from bottom/top sides
+    temp.set(0, 1, 0);
+    qj.vmult(temp, temp);
+    // project sphere to cylinder axis:
+    var point_on_axis_to_sphere = point_on_plane_to_sphere;
+    xi.vsub(xj, point_on_axis_to_sphere);
+    var axis_to_sphere_paral = temp.mult(temp.dot(point_on_axis_to_sphere));
+    var y_sqrd = axis_to_sphere_paral.dot(axis_to_sphere_paral);
+    if (y_sqrd <= 0.25 * H*H) {
+        var axis_to_sphere_ortho = plane_to_sphere_ortho;
+        point_on_axis_to_sphere.vsub(axis_to_sphere_paral, axis_to_sphere_ortho);
+        if (axis_to_sphere_ortho.dot(axis_to_sphere_ortho) <= Math.pow(R + si.radius, 2)) {
+            if (justTest) {
+                return true;
+            }
+            axis_to_sphere_ortho.normalize();
+            axis_to_sphere_ortho.negate(r.ni);
+            r.ni.mult(si.radius, ri);
+            ri.vadd(xi, ri);
+            ri.vsub(bi.position, ri);
+            axis_to_sphere_paral.vadd(axis_to_sphere_ortho.mult(R, rj), rj);
+            rj.vadd(xj, rj);
+            rj.vsub(bj.position, rj);
+            this.result.push(r);
+            this.createFrictionEquationsFromContact(r, this.frictionResult);
+        }
+    }
 };

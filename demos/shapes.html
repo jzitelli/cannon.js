@@ -79,7 +79,7 @@
             q.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI / 4);
             var cylinderBody3 = new CANNON.Body({ mass: mass });
             cylinderBody3.addShape(implicitCylinder, undefined, q);
-            cylinderBody3.position.set(size,size*2,8*size+1);
+            cylinderBody3.position.set(size, size*2, 8*size+1);
             world.addBody(cylinderBody3);
             demo.addVisual(cylinderBody3);
 

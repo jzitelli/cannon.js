@@ -1004,7 +1004,7 @@ CANNON.Demo.prototype.shape2mesh = function(body){
         switch(shape.type){
 
         case CANNON.Shape.types.SPHERE:
-            var sphere_geometry = new THREE.SphereGeometry( shape.radius, 8, 8);
+            var sphere_geometry = new THREE.SphereGeometry( shape.radius, 16, 12);
             mesh = new THREE.Mesh( sphere_geometry, this.currentMaterial );
             break;
 
