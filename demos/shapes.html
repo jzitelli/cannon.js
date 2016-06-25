@@ -73,16 +73,29 @@
             world.addBody(cylinderBody2);
             demo.addVisual(cylinderBody2);
 
-            // Implicit cylinder shape
-            var implicitCylinder = new CANNON.ImplicitCylinder(size, 3*size);
+            // Implicit cylinder shape 1
+            var implicitCylinder1 = new CANNON.ImplicitCylinder(size, 3*size);
             q = new CANNON.Quaternion();
-            q.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI / 4);
-            var cylinderBody3 = new CANNON.Body({ mass: mass });
-            cylinderBody3.addShape(implicitCylinder, undefined, q);
-            cylinderBody3.position.set(size, size*2, 8*size+1);
-            world.addBody(cylinderBody3);
-            demo.addVisual(cylinderBody3);
+            q.setFromAxisAngle(new CANNON.Vec3(1,0,0), Math.PI / 2);
+            var impCylBody1 = new CANNON.Body({ mass: mass });
+            impCylBody1.addShape(implicitCylinder1, undefined, q);
+            impCylBody1.position.copy(sphereBody.position);
+            impCylBody1.position.x += 0.3 * size;
+            impCylBody1.position.z += 4 * size + 1;
+            world.addBody(impCylBody1);
+            demo.addVisual(impCylBody1);
 
+            // Implicit cylinder shape 2
+            var implicitCylinder2 = new CANNON.ImplicitCylinder(0.75*size, 4*size);
+            var impCylBody2 = new CANNON.Body({ mass: mass });
+            q = new CANNON.Quaternion();
+            q.setFromAxisAngle(new CANNON.Vec3(0,0,1), Math.PI / 2);
+            impCylBody2.addShape(implicitCylinder2, undefined, q);
+            impCylBody2.position.copy(sphereBody.position);
+            impCylBody2.position.y -= 1.25 * size;
+            impCylBody2.position.z += 22 * size + 1;
+            world.addBody(impCylBody2);
+            demo.addVisual(impCylBody2);
 
             // Box shape
             var boxShape = new CANNON.Box(new CANNON.Vec3(size,size,size));

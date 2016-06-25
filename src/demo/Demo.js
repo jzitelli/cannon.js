@@ -714,11 +714,12 @@ CANNON.Demo = function(options){
 
     var lastCallTime = 0;
     var resetCallTime = false;
+    var playbackRate = 0.25; // 1;
     function updatePhysics(){
         // Step world
         var timeStep = 1 / settings.stepFrequency;
 
-        var now = performance.now() / 1000;
+        var now = performance.now() / 1000 * playbackRate;
 
         if(!lastCallTime){
             // last call time not saved, cant guess elapsed time. Take a simple step.
@@ -1121,6 +1122,8 @@ CANNON.Demo.prototype.shape2mesh = function(body){
 
         case CANNON.Shape.types.IMPLICITCYLINDER:
             var impCylGeometry = new THREE.CylinderGeometry(shape.radius, shape.radius, shape.height, 16, 1);
+            impCylGeometry.computeBoundingSphere();
+            impCylGeometry.computeFaceNormals();
             mesh = new THREE.Mesh(impCylGeometry, this.currentMaterial);
             break;
 
