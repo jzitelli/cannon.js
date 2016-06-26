@@ -1,4 +1,4 @@
-// Sat, 25 Jun 2016 16:05:19 GMT
+// Sun, 26 Jun 2016 18:42:29 GMT
 
 /*
  * Copyright (c) 2015 cannon.js Authors
@@ -9408,6 +9408,7 @@ module.exports = Ellipsoid;
 
 var Shape = _dereq_('./Shape');
 var Vec3 = _dereq_('../math/Vec3');
+var Mat3 = _dereq_('../math/Mat3');
 
 /**
  * Ellipsoid shape (reference: https://en.wikipedia.org/wiki/Ellipsoid)
@@ -9468,7 +9469,6 @@ Ellipsoid.prototype.updateBoundingSphereRadius = function(){
     this.boundingSphereRadius = Math.max(this.a, this.b, this.c);
 };
 
-var rotatedLengthsTemp = new Vec3();
 Ellipsoid.prototype.calculateWorldAABB = function(pos,quat,min,max) {
     /**
      * Points \vec{x} := [x_1, x_2, x_3]^T on the rotated ellipsoid (ignoring translation for now) satisfy the equation
@@ -9476,8 +9476,8 @@ Ellipsoid.prototype.calculateWorldAABB = function(pos,quat,min,max) {
      *   f(\vec{x}) := \vec{x}^T A \vec{x} = f(\vec{x})
      *               = \vec{x}^T U \Sigma U^T \vec{x} = 1,
      *
-     * where U is the 3x3 orthogonal rotation matrix (computed from the quaternion),
-     * \Sigma is the diagonal matrix of eigenvalues (1/a^2, 1/b^2, 1/c^2).
+     * where U is the 3x3 orthogonal rotation matrix (determined by the quaternion),
+     * \Sigma is the diagonal matrix of eigenvalues [1/(R_1)^2, 1/(R_2)^2, 1/(R_3)^2].
      *
      * The two points attaining min/max along the (e.g.) x-axis occur where
      *
@@ -9492,13 +9492,57 @@ Ellipsoid.prototype.calculateWorldAABB = function(pos,quat,min,max) {
      *   \grad{f}(\vec{x}) = \vec{b}
      *      ===>  \vec{x}  = (1/2) U \Sigma^{-1} U^T \vec{b}.
      *
-     * For \vec{b} := [b_1, 0, 0]^T,
+     * For \vec{b}_k := [b_1, b_2, b_3]^T defined by
      *
+     *   b_k /= 0, b_i = 0 for i /= k,
+     *
+     * the solution \vec{x} is defined by (in Einstein notation)
+     *
+     *   x_i = (R_j)^2 U_ij U_kj b_k.
+     *
+     * Substituting into the ellipsoid eqn:
+     *
+     *   (b_k)^2 * 1/(R_m)^2 * [(R_j)^2 U_im U_kj U_ij]^2 = 1.
+     *
+     * Orthogonality annihilates terms, leaving:
+     *
+     *   (b_k)^2 (R_j)^2 (U_kj)^2 = 1
+     *      ===>  b_k = (+/-) [(R_j)^2 (U_kj)^2]^(-1/2).
+     *
+     * The extremum \vec{x} is then defined by:
+     *
+     *   x_i = (+/-) (R_j)^2 U_kj U_ij / [(R_m)^2 (U_km)^2]^(1/2).
      */
-
+     var R = new Vec3(this.a, this.b, this.c);
+     var R2 = R.vmul(R);
+     var U = (new Mat3()).setRotationFromQuaternion(quat);
+     var e = U.elements;
+     var u0 = new Vec3(e[0], e[1], e[2]);
+     var u1 = new Vec3(e[3], e[4], e[5]);
+     var u2 = new Vec3(e[6], e[7], e[8]);
+     var u02 = u0.vmul(u0);
+     var u12 = u1.vmul(u1);
+     var u22 = u2.vmul(u2);
+     var bInverse = [Math.sqrt(R2.dot(u02)), Math.sqrt(R2.dot(u12)), Math.sqrt(R2.dot(u22))];
+     R2 = R2.toArray();
+     u02 = u02.toArray();
+     u12 = u12.toArray();
+     u22 = u22.toArray();
+     var x = 0;
+     var y = 0;
+     var z = 0;
+     for (var j = 0; j < 3; j++) {
+         x += R2[j] * u02[j] / bInverse[0];
+         y += R2[j] * u12[j] / bInverse[1];
+         z += R2[j] * u22[j] / bInverse[2];
+     }
+     max.set(x, y, z);
+     min.set(-x, -y, -z);
+     max.vadd(pos, max);
+     min.vadd(pos, min);
 };
 
-},{"../math/Vec3":31,"./Shape":46}],42:[function(_dereq_,module,exports){
+},{"../math/Mat3":28,"../math/Vec3":31,"./Shape":46}],42:[function(_dereq_,module,exports){
 var Shape = _dereq_('./Shape');
 var ConvexPolyhedron = _dereq_('./ConvexPolyhedron');
 var Vec3 = _dereq_('../math/Vec3');
