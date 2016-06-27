@@ -1,4 +1,4 @@
-// Sun, 26 Jun 2016 18:42:29 GMT
+// Mon, 27 Jun 2016 21:42:48 GMT
 
 /*
  * Copyright (c) 2015 cannon.js Authors
@@ -13916,39 +13916,10 @@ var ellipsoidLengths = new Vec3();
  * @param  {Body}       bj
  */
 Narrowphase.prototype[Shape.types.SPHERE | Shape.types.ELLIPSOID] =
-Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj){
-    // We will have only one contact in this case
-    var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
-
-    // Contact normal
-    xj.vsub(xi, r.ni);
-    r.ni.normalize();
-
-    // Contact point locations
-
-    // on the sphere:
-    r.ri.copy(r.ni);
-    r.ri.scale(si.radius, r.ri);
-    r.ri.vadd(xi, r.ri);
-    r.ri.vsub(bi.position, r.ri);
-
-    // on the ellipsoid:
-    // TODO:
-    r.rj.copy(r.ni);
-    ellipsoidLengths.set(-sj.a, -sj.b, -sj.c);
-    qj.vmult(ellipsoidLengths, ellipsoidLengths);
-    r.rj.vmul(ellipsoidLengths, r.rj);
-    r.rj.vadd(xj, r.rj);
-    r.rj.vsub(bj.position, r.rj);
-
-    this.result.push(r);
-
-    this.createFrictionEquationsFromContact(r, this.frictionResult);
+Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj, justTest) {
+    // TODO
 };
 
-
-var point_on_plane_to_ellipsoid = new Vec3();
-var plane_to_ellipsoid_ortho = new Vec3();
 
 /**
  * @method planeEllipsoid
@@ -13962,43 +13933,17 @@ var plane_to_ellipsoid_ortho = new Vec3();
  * @param  {Body}       bj
  */
 Narrowphase.prototype[Shape.types.PLANE | Shape.types.ELLIPSOID] =
-Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj){
-    // *** WIP ***
-
-    // We will have one contact in this case
+Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj, justTest) {
     var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
-
-    // Contact normal
     r.ni.set(0,0,1);
     qi.vmult(r.ni, r.ni);
-
-    // Vector from ellipsoid center to contact point
-    ellipsoidLengths.set(-sj.a, -sj.b, -sj.c);
-    qj.vmult(ellipsoidLengths, ellipsoidLengths);
-    r.ni.vmul(ellipsoidLengths, r.rj);
-
-    // Project down ellipsoid on plane
-    xj.vsub(xi, point_on_plane_to_ellipsoid);
-    r.ni.mult(r.ni.dot(point_on_plane_to_ellipsoid), plane_to_ellipsoid_ortho);
-    point_on_plane_to_ellipsoid.vsub(plane_to_ellipsoid_ortho, r.ri); // The ellipsoid position projected to plane
-
-    // if(-point_on_plane_to_ellipsoid.dot(r.nj) <= sj.radius){
-
-    //     // Make it relative to the body
-    //     var ri = r.ri;
-    //     var rj = r.rj;
-    //     ri.vadd(xi, ri);
-    //     ri.vsub(bi.position, ri);
-    //     rj.vadd(xj, rj);
-    //     rj.vsub(bj.position, rj);
-
-    //     this.result.push(r);
-    //     this.createFrictionEquationsFromContact(r, this.frictionResult);
-    // }
+    // WIP
 };
 
-
-var temp = new Vec3();
+var y_cyl = new Vec3();
+var i2j = new Vec3();
+var paral = new Vec3();
+var ortho = new Vec3();
 /**
  * @method sphereImplicitCylinder
  */
@@ -14010,66 +13955,75 @@ Narrowphase.prototype.sphereImplicitCylinder = function (si, sj, xi, xj, qi, qj,
     var ri = r.ri;
     var rj = r.rj;
     var ni = r.ni;
-    for (var i = 0; i < 2; i++) {
-        if (i === 0) {
-            // bottom end
-            ni.set(0, 1, 0);
-            temp.set(0, -0.5*H, 0);
-        } else {
-            // top end
-            ni.set(0, -1, 0);
-            temp.set(0, 0.5*H, 0);
-        }
-        qj.vmult(ni, ni);
-        qj.vmult(temp, temp);
-        temp.vadd(xj, temp);
-        // Project down sphere on plane
-        xi.vsub(temp, point_on_plane_to_sphere);
-        ni.mult(ni.dot(point_on_plane_to_sphere), plane_to_sphere_ortho);
-        point_on_plane_to_sphere.vsub(plane_to_sphere_ortho, rj);
-        rj.vadd(temp, rj);
-        var d = -plane_to_sphere_ortho.dot(ni);
-        if (d > 0 && d <= si.radius && rj.distanceSquared(temp) < R*R) {
-            if (justTest) {
-                return true;
-            }
-            // Vector from sphere center to contact point
-            ni.mult(si.radius, ri);
-            // Make it relative to the body
-            ri.vadd(xi, ri);
-            ri.vsub(bi.position, ri);
-            rj.vsub(bj.position, rj);
-            this.result.push(r);
-            this.createFrictionEquationsFromContact(r, this.frictionResult);
-            return;
-        }
-    }
-    // still checking, with no contacts from bottom/top sides
-    temp.set(0, 1, 0);
-    qj.vmult(temp, temp);
-    // project sphere to cylinder axis:
-    var point_on_axis_to_sphere = point_on_plane_to_sphere;
-    xi.vsub(xj, point_on_axis_to_sphere);
-    var axis_to_sphere_paral = temp.mult(temp.dot(point_on_axis_to_sphere));
-    var y_sqrd = axis_to_sphere_paral.dot(axis_to_sphere_paral);
-    if (y_sqrd <= 0.25 * H*H) {
-        var axis_to_sphere_ortho = plane_to_sphere_ortho;
-        point_on_axis_to_sphere.vsub(axis_to_sphere_paral, axis_to_sphere_ortho);
-        if (axis_to_sphere_ortho.dot(axis_to_sphere_ortho) <= Math.pow(R + si.radius, 2)) {
-            if (justTest) {
-                return true;
-            }
-            axis_to_sphere_ortho.normalize();
-            axis_to_sphere_ortho.negate(ni);
-            ni.mult(si.radius, ri);
-            ri.vadd(xi, ri);
-            ri.vsub(bi.position, ri);
-            axis_to_sphere_paral.vadd(axis_to_sphere_ortho.mult(R, rj), rj);
+
+    xj.vsub(xi, i2j);
+
+    // project into cylindrical basis:
+    qj.vmult(Vec3.UNIT_Y, y_cyl);
+    sparal = -y_cyl.dot(i2j);
+    lparal = Math.abs(sparal);
+    y_cyl.mult(sparal, paral);
+    paral.vadd(i2j, ortho);
+    ortho.mult(-1, ortho);
+    lortho_sqrd = ortho.dot(ortho);
+
+    if (lparal <= 0.5*H) {
+        // potential contact on the curved side
+        if (lortho_sqrd > R*R && lortho_sqrd <= Math.pow(R + si.radius, 2)) {
+            if (justTest) return true;
+            paral.vadd(ortho, rj);
             rj.vadd(xj, rj);
             rj.vsub(bj.position, rj);
+            ortho.normalize();
+            ortho.negate(ni);
+            ni.mult(si.radius, ri);
+            ri.vadd(xi, ri);
+            ri.vsub(bi.position, ri);
             this.result.push(r);
             this.createFrictionEquationsFromContact(r, this.frictionResult);
             return;
+        }
+    } else if (lparal <= 0.5*H + si.radius) {
+        // potential contact on a circular face or ring
+        if (lortho_sqrd <= R*R) {
+            // contact on face
+            if (justTest) return true;
+            paral.vadd(ortho, rj);
+            rj.vadd(xj, rj);
+            rj.vsub(bj.position, rj);
+            ni.x = ni.z = 0;
+            ni.y = (sparal > 0 ? -1 : 1);
+            qj.vmult(ni, ni);
+            ni.mult(si.radius, ri);
+            ri.vadd(xi, ri);
+            ri.vsub(bi.position, ri);
+            this.result.push(r);
+            this.createFrictionEquationsFromContact(r, this.frictionResult);
+            return;
+        } else {
+            // potential contact on ring
+            var lortho = Math.sqrt(lortho_sqrd);
+            if (Math.pow(lortho - R, 2) + Math.pow(lparal - 0.5*H, 2) <= si.radius*si.radius) {
+                // contact on ring
+                if (justTest) return true;
+                paral.vadd(ortho, rj);
+                rj.vadd(xj, rj);
+                rj.vsub(bj.position, rj);
+                if (sparal > 0) {
+                    y_cyl.mult(-(lparal - 0.5*H), ni);
+                } else {
+                    y_cyl.mult( (lparal - 0.5*H), ni);
+                }
+                ortho.mult((lortho - R) / lortho, ortho);
+                ni.vsub(ortho, ni);
+                ni.normalize();
+                ni.mult(si.radius, ri);
+                ri.vadd(xi, ri);
+                ri.vsub(bi.position, ri);
+                this.result.push(r);
+                this.createFrictionEquationsFromContact(r, this.frictionResult);
+                return;
+            }
         }
     }
     if (justTest) {
@@ -14089,7 +14043,9 @@ Narrowphase.prototype.planeImplicitCylinder = function (si, sj, xi, xj, qi, qj, 
     var ri = r.ri;
     var rj = r.rj;
     var ni = r.ni;
+
     // TODO
+
 };
 
 },{"../collision/AABB":3,"../collision/Ray":10,"../equations/ContactEquation":20,"../equations/FrictionEquation":22,"../math/Quaternion":29,"../math/Transform":30,"../math/Vec3":31,"../objects/Body":32,"../shapes/ConvexPolyhedron":39,"../shapes/Shape":46,"../solver/Solver":50,"../utils/Vec3Pool":57}],59:[function(_dereq_,module,exports){
