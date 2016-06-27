@@ -93,7 +93,7 @@
             impCylBody2.addShape(implicitCylinder2, undefined, q);
             impCylBody2.position.copy(sphereBody.position);
             impCylBody2.position.y -= 1.25 * size;
-            impCylBody2.position.z += 22 * size + 1;
+            impCylBody2.position.z += 12 * size + 1;
             world.addBody(impCylBody2);
             demo.addVisual(impCylBody2);
 
@@ -151,12 +151,12 @@
             demo.addVisual(polyhedronBody);
 
             // Ellipsoid
-            var ellipsoidBody = new CANNON.Body({mass: mass });
-            var ellipsoidShape = new CANNON.Ellipsoid(1, 2, 4);
-            ellipsoidBody.addShape(ellipsoidShape);
-            ellipsoidBody.position.set(2*size, 0, 10*size);
-            world.addBody(ellipsoidBody);
-            demo.addVisual(ellipsoidBody);
+            // var ellipsoidBody = new CANNON.Body({mass: mass });
+            // var ellipsoidShape = new CANNON.Ellipsoid(1, 2, 4);
+            // ellipsoidBody.addShape(ellipsoidShape);
+            // ellipsoidBody.position.set(2*size, 0, 10*size);
+            // world.addBody(ellipsoidBody);
+            // demo.addVisual(ellipsoidBody);
         });
 
         function setupWorld(demo){
