@@ -1874,39 +1874,10 @@ var ellipsoidLengths = new Vec3();
  * @param  {Body}       bj
  */
 Narrowphase.prototype[Shape.types.SPHERE | Shape.types.ELLIPSOID] =
-Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj){
-    // We will have only one contact in this case
-    var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
-
-    // Contact normal
-    xj.vsub(xi, r.ni);
-    r.ni.normalize();
-
-    // Contact point locations
-
-    // on the sphere:
-    r.ri.copy(r.ni);
-    r.ri.scale(si.radius, r.ri);
-    r.ri.vadd(xi, r.ri);
-    r.ri.vsub(bi.position, r.ri);
-
-    // on the ellipsoid:
-    // TODO:
-    r.rj.copy(r.ni);
-    ellipsoidLengths.set(-sj.a, -sj.b, -sj.c);
-    qj.vmult(ellipsoidLengths, ellipsoidLengths);
-    r.rj.vmul(ellipsoidLengths, r.rj);
-    r.rj.vadd(xj, r.rj);
-    r.rj.vsub(bj.position, r.rj);
-
-    this.result.push(r);
-
-    this.createFrictionEquationsFromContact(r, this.frictionResult);
+Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj, justTest) {
+    // TODO
 };
 
-
-var point_on_plane_to_ellipsoid = new Vec3();
-var plane_to_ellipsoid_ortho = new Vec3();
 
 /**
  * @method planeEllipsoid
@@ -1920,39 +1891,11 @@ var plane_to_ellipsoid_ortho = new Vec3();
  * @param  {Body}       bj
  */
 Narrowphase.prototype[Shape.types.PLANE | Shape.types.ELLIPSOID] =
-Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj){
-    // *** WIP ***
-
-    // We will have one contact in this case
+Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj, justTest) {
     var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
-
-    // Contact normal
     r.ni.set(0,0,1);
     qi.vmult(r.ni, r.ni);
-
-    // Vector from ellipsoid center to contact point
-    ellipsoidLengths.set(-sj.a, -sj.b, -sj.c);
-    qj.vmult(ellipsoidLengths, ellipsoidLengths);
-    r.ni.vmul(ellipsoidLengths, r.rj);
-
-    // Project down ellipsoid on plane
-    xj.vsub(xi, point_on_plane_to_ellipsoid);
-    r.ni.mult(r.ni.dot(point_on_plane_to_ellipsoid), plane_to_ellipsoid_ortho);
-    point_on_plane_to_ellipsoid.vsub(plane_to_ellipsoid_ortho, r.ri); // The ellipsoid position projected to plane
-
-    // if(-point_on_plane_to_ellipsoid.dot(r.nj) <= sj.radius){
-
-    //     // Make it relative to the body
-    //     var ri = r.ri;
-    //     var rj = r.rj;
-    //     ri.vadd(xi, ri);
-    //     ri.vsub(bi.position, ri);
-    //     rj.vadd(xj, rj);
-    //     rj.vsub(bj.position, rj);
-
-    //     this.result.push(r);
-    //     this.createFrictionEquationsFromContact(r, this.frictionResult);
-    // }
+    // WIP
 };
 
 
