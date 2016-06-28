@@ -1,4 +1,4 @@
-// Mon, 27 Jun 2016 21:42:48 GMT
+// Tue, 28 Jun 2016 02:57:35 GMT
 
 /*
  * Copyright (c) 2015 cannon.js Authors
@@ -13902,18 +13902,8 @@ Narrowphase.prototype.sphereHeightfield = function (
 };
 
 
-var ellipsoidLengths = new Vec3();
-
 /**
  * @method sphereEllipsoid
- * @param  {Shape}      si
- * @param  {Shape}      sj
- * @param  {Vec3}       xi
- * @param  {Vec3}       xj
- * @param  {Quaternion} qi
- * @param  {Quaternion} qj
- * @param  {Body}       bi
- * @param  {Body}       bj
  */
 Narrowphase.prototype[Shape.types.SPHERE | Shape.types.ELLIPSOID] =
 Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj, justTest) {
@@ -13923,22 +13913,12 @@ Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj
 
 /**
  * @method planeEllipsoid
- * @param  {Shape}      si
- * @param  {Shape}      sj
- * @param  {Vec3}       xi
- * @param  {Vec3}       xj
- * @param  {Quaternion} qi
- * @param  {Quaternion} qj
- * @param  {Body}       bi
- * @param  {Body}       bj
  */
 Narrowphase.prototype[Shape.types.PLANE | Shape.types.ELLIPSOID] =
 Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj, justTest) {
-    var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
-    r.ni.set(0,0,1);
-    qi.vmult(r.ni, r.ni);
-    // WIP
+    // TODO
 };
+
 
 var y_cyl = new Vec3();
 var i2j = new Vec3();
@@ -13951,27 +13931,28 @@ Narrowphase.prototype[Shape.types.SPHERE | Shape.types.IMPLICITCYLINDER] =
 Narrowphase.prototype.sphereImplicitCylinder = function (si, sj, xi, xj, qi, qj, bi, bj, rsi, rsj, justTest) {
     var H = sj.height;
     var R = sj.radius;
-    var r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
-    var ri = r.ri;
-    var rj = r.rj;
-    var ni = r.ni;
-
+    var r, ri, rj, ni;
     xj.vsub(xi, i2j);
 
     // project into cylindrical basis:
     qj.vmult(Vec3.UNIT_Y, y_cyl);
-    sparal = -y_cyl.dot(i2j);
-    lparal = Math.abs(sparal);
+    var sparal = -y_cyl.dot(i2j);
+    var lparal = Math.abs(sparal);
     y_cyl.mult(sparal, paral);
     paral.vadd(i2j, ortho);
     ortho.mult(-1, ortho);
-    lortho_sqrd = ortho.dot(ortho);
+    var lortho_sqrd = ortho.dot(ortho);
+    var lortho = Math.sqrt(lortho_sqrd);
 
     if (lparal <= 0.5*H) {
         // potential contact on the curved side
         if (lortho_sqrd > R*R && lortho_sqrd <= Math.pow(R + si.radius, 2)) {
+            // contact on curved side
             if (justTest) return true;
-            paral.vadd(ortho, rj);
+            r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
+            ri = r.ri, rj = r.rj, ni = r.ni;
+
+            paral.vadd(ortho.mult(R / lortho, ortho), rj);
             rj.vadd(xj, rj);
             rj.vsub(bj.position, rj);
             ortho.normalize();
@@ -13988,7 +13969,10 @@ Narrowphase.prototype.sphereImplicitCylinder = function (si, sj, xi, xj, qi, qj,
         if (lortho_sqrd <= R*R) {
             // contact on face
             if (justTest) return true;
-            paral.vadd(ortho, rj);
+            r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
+            ri = r.ri, rj = r.rj, ni = r.ni;
+
+            ortho.vadd(paral.mult(0.5*H / lparal, paral), rj);
             rj.vadd(xj, rj);
             rj.vsub(bj.position, rj);
             ni.x = ni.z = 0;
@@ -14006,16 +13990,20 @@ Narrowphase.prototype.sphereImplicitCylinder = function (si, sj, xi, xj, qi, qj,
             if (Math.pow(lortho - R, 2) + Math.pow(lparal - 0.5*H, 2) <= si.radius*si.radius) {
                 // contact on ring
                 if (justTest) return true;
-                paral.vadd(ortho, rj);
-                rj.vadd(xj, rj);
-                rj.vsub(bj.position, rj);
+                r = this.createContactEquation(bi,bj,si,sj,rsi,rsj);
+                ri = r.ri, rj = r.rj, ni = r.ni;
+
                 if (sparal > 0) {
+                    y_cyl.mult(0.5*H, rj);
                     y_cyl.mult(-(lparal - 0.5*H), ni);
                 } else {
+                    y_cyl.mult(-0.5*H, rj);
                     y_cyl.mult( (lparal - 0.5*H), ni);
                 }
-                ortho.mult((lortho - R) / lortho, ortho);
-                ni.vsub(ortho, ni);
+                rj.vadd(ortho.mult(R / lortho), rj);
+                rj.vadd(xj, rj);
+                rj.vsub(bj.position, rj);
+                ni.vadd(ortho.mult(-(lortho - R) / lortho, ortho), ni);
                 ni.normalize();
                 ni.mult(si.radius, ri);
                 ri.vadd(xi, ri);
@@ -14030,7 +14018,6 @@ Narrowphase.prototype.sphereImplicitCylinder = function (si, sj, xi, xj, qi, qj,
         return false;
     }
 };
-
 
 /**
  * @method planeImplicitCylinder
