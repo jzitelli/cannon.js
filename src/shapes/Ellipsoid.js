@@ -19,6 +19,7 @@ var Mat3 = require('../math/Mat3');
  */
 function Ellipsoid(a, b, c) {
     Shape.call(this);
+    this.type = Shape.types.ELLIPSOID;
 
     /**
      * @property {Number} a
@@ -33,14 +34,16 @@ function Ellipsoid(a, b, c) {
      */
     this.c = c !== undefined ? Number(c) : 1.0;
 
-    this.type = Shape.types.ELLIPSOID;
-
     if(this.a <= 0 || this.b <= 0 || this.c <= 0){
         throw new Error('The Ellipsoid lengths must be positive.');
     }
 
+    this._R = new Vec3(this.a, this.b, this.c);
+    this._R2 = this._R.vmul(this._R);
+    
     this.updateBoundingSphereRadius();
 }
+
 Ellipsoid.prototype = new Shape();
 Ellipsoid.prototype.constructor = Ellipsoid;
 
@@ -62,6 +65,11 @@ Ellipsoid.prototype.volume = function(){
 Ellipsoid.prototype.updateBoundingSphereRadius = function(){
     this.boundingSphereRadius = Math.max(this.a, this.b, this.c);
 };
+
+var U = new Mat3();
+var u0 = new Vec3();
+var u1 = new Vec3();
+var u2 = new Vec3();
 
 Ellipsoid.prototype.calculateWorldAABB = function(pos,quat,min,max) {
     /**
@@ -107,31 +115,21 @@ Ellipsoid.prototype.calculateWorldAABB = function(pos,quat,min,max) {
      *
      *   x_i = (+/-) (R_j)^2 U_kj U_ij / [(R_m)^2 (U_km)^2]^(1/2).
      */
-     var R = new Vec3(this.a, this.b, this.c);
-     var R2 = R.vmul(R);
-     var U = (new Mat3()).setRotationFromQuaternion(quat);
-     var e = U.elements;
-     var u0 = new Vec3(e[0], e[1], e[2]);
-     var u1 = new Vec3(e[3], e[4], e[5]);
-     var u2 = new Vec3(e[6], e[7], e[8]);
-     var u02 = u0.vmul(u0);
-     var u12 = u1.vmul(u1);
-     var u22 = u2.vmul(u2);
-     var bInverse = [Math.sqrt(R2.dot(u02)), Math.sqrt(R2.dot(u12)), Math.sqrt(R2.dot(u22))];
-     R2 = R2.toArray();
-     u02 = u02.toArray();
-     u12 = u12.toArray();
-     u22 = u22.toArray();
-     var x = 0;
-     var y = 0;
-     var z = 0;
-     for (var j = 0; j < 3; j++) {
-         x += R2[j] * u02[j] / bInverse[0];
-         y += R2[j] * u12[j] / bInverse[1];
-         z += R2[j] * u22[j] / bInverse[2];
-     }
-     max.set(x, y, z);
-     min.set(-x, -y, -z);
-     max.vadd(pos, max);
-     min.vadd(pos, min);
+    
+    U.setRotationFromQuaternion(quat);
+    var e = U.elements;
+    u0.set(e[0]*e[0], e[1]*e[1], e[2]*e[2]);
+    u1.set(e[3]*e[3], e[4]*e[4], e[5]*e[5]);
+    u2.set(e[6]*e[6], e[7]*e[7], e[8]*e[8]);
+    var R2 = this._R2;
+    var x0 = R2.dot(u0);
+    var x1 = R2.dot(u1);
+    var x2 = R2.dot(u2);
+    x0 /= Math.sqrt(R2.dot(u0));
+    x1 /= Math.sqrt(R2.dot(u1));
+    x2 /= Math.sqrt(R2.dot(u2));
+    max.set(x0, x1, x2);
+    max.negate(min);
+    max.vadd(pos, max);
+    min.vadd(pos, min);
 };

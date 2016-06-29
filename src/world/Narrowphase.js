@@ -1860,12 +1860,55 @@ Narrowphase.prototype.sphereHeightfield = function (
 };
 
 
+var i2j = new Vec3();
+var nj  = new Vec3();
+var sumNormals = new Vec3();
+
 /**
  * @method sphereEllipsoid
  */
 Narrowphase.prototype[Shape.types.SPHERE | Shape.types.ELLIPSOID] =
 Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj, justTest) {
-    // TODO
+    /* 
+     * At most one contact, generated according to the heuristic:
+     *
+     *   || \vec{n_i} + \vec{n_j} || < \epsilon.
+     *
+     */
+    var r = this.createContactEquation(bi, bj, si, sj, rsi, rsj);
+    var ri = r.ri,
+        rj = r.rj,
+        ni = r.ni;
+
+    var eps_sqrd = Math.pow(0.01, 2);
+    var max_iters = 8;
+
+    // initial guess (satisfying the case where the ellipsoid is spherical):
+    var iter = 0;
+    xj.vsub(xi, i2j);
+    ni.copy(i2j);
+    ni.normalize();
+    // determine contact point and normal on the ellipsoid:
+    var j2i_loc = Transform.vectorToLocalFrame(undefined, qj, i2j);
+    j2i_loc.negate();
+    sj._R.vmul(j2i_loc, nj);
+    var s = Math.sqrt(i2j.norm2() / j2i_loc.dot(nj));
+    qj.vmult(nj, nj);
+    nj.normalize();
+    nj.mult(s, rj);
+    ni.vadd(nj, sumNormals);
+    
+    while (sumNormals.dot(sumNormals) > eps_sqrd) {
+        // find closest intersection of the ellipsoid tangent with the sphere:
+
+    }
+
+    if (sumNormals.dot(sumNormals) <= eps_sqrd) {
+        // verify contact:
+        
+    } else {
+        if (justTest) return false;
+    }
 };
 
 
@@ -1879,7 +1922,6 @@ Narrowphase.prototype.planeEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj,
 
 
 var y_cyl = new Vec3();
-var i2j = new Vec3();
 var paral = new Vec3();
 var ortho = new Vec3();
 /**
@@ -1892,7 +1934,7 @@ Narrowphase.prototype.sphereImplicitCylinder = function (si, sj, xi, xj, qi, qj,
     var r, ri, rj, ni;
     xj.vsub(xi, i2j);
 
-    // project into cylindrical basis:
+    // project into cylinder's local basis:
     qj.vmult(Vec3.UNIT_Y, y_cyl);
     var sparal = -y_cyl.dot(i2j);
     var lparal = Math.abs(sparal);
