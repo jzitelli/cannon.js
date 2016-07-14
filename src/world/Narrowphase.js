@@ -1790,7 +1790,8 @@ Narrowphase.prototype.sphereHeightfield = function (
         iMaxY = Math.ceil((localSpherePos.y + radius) / w) + 1;
 
     // Bail out if we are out of the terrain
-    if(iMaxX < 0 || iMaxY < 0 || iMinX > data.length || iMaxY > data[0].length){
+    // changed per https://github.com/schteppe/cannon.js/pull/265:
+    if(iMaxX < 0 || iMaxY < 0 || iMinX > data.length || iMinY > data[0].length){
         return;
     }
 
@@ -1869,7 +1870,7 @@ var sumNormals = new Vec3();
  */
 Narrowphase.prototype[Shape.types.SPHERE | Shape.types.ELLIPSOID] =
 Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj, justTest) {
-    /* 
+    /*
      * At most one contact, generated according to the heuristic:
      *
      *   || \vec{n_i} + \vec{n_j} || < \epsilon.
@@ -1897,7 +1898,7 @@ Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj
     nj.normalize();
     nj.mult(s, rj);
     ni.vadd(nj, sumNormals);
-    
+
     while (sumNormals.dot(sumNormals) > eps_sqrd) {
         // find closest intersection of the ellipsoid tangent with the sphere:
 
@@ -1905,7 +1906,7 @@ Narrowphase.prototype.sphereEllipsoid = function(si,sj,xi,xj,qi,qj,bi,bj,rsi,rsj
 
     if (sumNormals.dot(sumNormals) <= eps_sqrd) {
         // verify contact:
-        
+
     } else {
         if (justTest) return false;
     }
